@@ -16,6 +16,21 @@ void mbot_calculate_odometry(float vx, float vy, float wz, float dt, float* x, f
     while (*theta <= -PI) *theta += 2.0 * PI;
 }
 
-void mbot_calculate_gyrodometry(float vx, float vy, float wz, float dt, float gyro_z, float* x, float* y, float* theta) {
-    return;
+void mbot_calculate_gyrodometry(float vx, float vy, float wz, float dt, float gyro_z,
+                                float *x, float *y, float *theta)
+{
+    (void)wz;  // Heading comes from the IMU gyro.
+    if (!x || !y || !theta || dt <= 0.0f) return;
+
+    // Midpoint heading for more accurate position integration.
+    float th = *theta + 0.5f * gyro_z * dt;
+    float c = cosf(th), s = sinf(th);
+
+    *x += (vx * c - vy * s) * dt;
+    *y += (vx * s + vy * c) * dt;
+    *theta += gyro_z * dt;
+
+    // Normalize heading to (-pi, pi].
+    while (*theta > PI)   *theta -= 2.0f * PI;
+    while (*theta <= -PI) *theta += 2.0f * PI;
 }
