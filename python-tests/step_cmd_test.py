@@ -22,7 +22,7 @@ def main():
     print("Starting sequence...")
     
     # publish 0 first for 1s
-    move(0.0, 0.0, 3.0)
+    move(0.0, 0.0, 1.0)
 
     # 1. Drive forward 0.5 m/s for 4s
     move(0.5, 0.0, 4.0)
