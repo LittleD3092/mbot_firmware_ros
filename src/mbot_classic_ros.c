@@ -462,7 +462,10 @@ int main() {
 
     printf("\nStarting MBot Loop...\n");
     mbot_state.last_encoder_time = time_us_64(); 
-    if (!add_repeating_timer_ms((int32_t)(MAIN_LOOP_PERIOD * 1000.0f), mbot_loop, NULL, &mbot_loop_timer)){
+    // A negative delay fixes the time between callback starts. A positive delay is
+    // measured from the end of one callback, which stretches the loop past
+    // MAIN_LOOP_PERIOD and makes every dt-based pose integral read short.
+    if (!add_repeating_timer_ms(-(int32_t)(MAIN_LOOP_PERIOD * 1000.0f), mbot_loop, NULL, &mbot_loop_timer)){
         printf("Failed to add control loop timer! Halting.\r\n");
         while(1) {tight_loop_contents();}
     }
