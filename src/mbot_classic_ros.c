@@ -202,7 +202,7 @@ static void mbot_publish_state(void) {
 
     // Encoders & Odometry & TF - every 4th tick (25 Hz at 100 Hz timer)
     if (tick % 4 == 0) {
-        ret = rcl_publish(&odom_publisher, &odom_msg, NULL);
+        // ret = rcl_publish(&odom_publisher, &odom_msg, NULL);
         ret = rcl_publish(&gyrodom_publisher, &gyrodom_msg, NULL);
     }
 
@@ -227,15 +227,17 @@ static bool mbot_loop(repeating_timer_t *rt) {
             &mbot_state.vy,
             &mbot_state.wz
         );
-        mbot_calculate_odometry(
-            mbot_state.vx,
-            mbot_state.vy,
-            mbot_state.wz,
-            MAIN_LOOP_PERIOD,
-            &mbot_state.odom_x,
-            &mbot_state.odom_y,
-            &mbot_state.odom_theta
-        );
+
+        // Not used: Decided in 1.3
+        // mbot_calculate_odometry(
+        //     mbot_state.vx,
+        //     mbot_state.vy,
+        //     mbot_state.wz,
+        //     MAIN_LOOP_PERIOD,
+        //     &mbot_state.odom_x,
+        //     &mbot_state.odom_y,
+        //     &mbot_state.odom_theta
+        // );
         // Gyroscope-based odometry:
         // wheel-derived vx/vy estimate translation; IMU gyro z estimates heading.
         mbot_calculate_gyrodometry(
@@ -251,27 +253,27 @@ static bool mbot_loop(repeating_timer_t *rt) {
         /* Populate odometry and TF ROS messages with the exact timestamp of this calculation */
         int64_t stamp_ns = rmw_uros_epoch_nanos();
 
-        /* Odometry message */
-        odom_msg.header.stamp.sec     = stamp_ns / 1000000000LL;
-        odom_msg.header.stamp.nanosec = stamp_ns % 1000000000LL;
-        odom_msg.pose.pose.position.x = mbot_state.odom_x;
-        odom_msg.pose.pose.position.y = mbot_state.odom_y;
-        odom_msg.pose.pose.position.z = 0.0f;
+        // /* Odometry message */
+        // odom_msg.header.stamp.sec     = stamp_ns / 1000000000LL;
+        // odom_msg.header.stamp.nanosec = stamp_ns % 1000000000LL;
+        // odom_msg.pose.pose.position.x = mbot_state.odom_x;
+        // odom_msg.pose.pose.position.y = mbot_state.odom_y;
+        // odom_msg.pose.pose.position.z = 0.0f;
 
-        float cy = cosf(mbot_state.odom_theta * 0.5f);
-        float sy = sinf(mbot_state.odom_theta * 0.5f);
-        odom_msg.pose.pose.orientation.w = cy;
-        odom_msg.pose.pose.orientation.x = 0.0f;
-        odom_msg.pose.pose.orientation.y = 0.0f;
-        odom_msg.pose.pose.orientation.z = sy;
+        // float cy = cosf(mbot_state.odom_theta * 0.5f);
+        // float sy = sinf(mbot_state.odom_theta * 0.5f);
+        // odom_msg.pose.pose.orientation.w = cy;
+        // odom_msg.pose.pose.orientation.x = 0.0f;
+        // odom_msg.pose.pose.orientation.y = 0.0f;
+        // odom_msg.pose.pose.orientation.z = sy;
 
-        odom_msg.twist.twist.linear.x  = mbot_state.vx;
-        odom_msg.twist.twist.linear.y  = mbot_state.vy;
-        odom_msg.twist.twist.angular.z = mbot_state.wz;
+        // odom_msg.twist.twist.linear.x  = mbot_state.vx;
+        // odom_msg.twist.twist.linear.y  = mbot_state.vy;
+        // odom_msg.twist.twist.angular.z = mbot_state.wz;
 
         /* Gyroscope-based odometry message */
-        gyrodom_msg.header.stamp.sec = odom_msg.header.stamp.sec;
-        gyrodom_msg.header.stamp.nanosec = odom_msg.header.stamp.nanosec;
+        gyrodom_msg.header.stamp.sec = stamp_ns / 1000000000LL;
+        gyrodom_msg.header.stamp.nanosec = stamp_ns % 1000000000LL;
 
         gyrodom_msg.pose.pose.position.x = mbot_state.gyrodom_x;
         gyrodom_msg.pose.pose.position.y = mbot_state.gyrodom_y;
@@ -290,14 +292,14 @@ static bool mbot_loop(repeating_timer_t *rt) {
         gyrodom_msg.twist.twist.angular.z = mbot_state.imu_gyro[2];
 
         /* TF message (odom -> base_footprint) */
-        tf_msg.transforms.data[0].header.stamp.sec     = odom_msg.header.stamp.sec;
-        tf_msg.transforms.data[0].header.stamp.nanosec = odom_msg.header.stamp.nanosec;
-        tf_msg.transforms.data[0].header.frame_id      = odom_msg.header.frame_id;
-        tf_msg.transforms.data[0].child_frame_id       = odom_msg.child_frame_id;
-        tf_msg.transforms.data[0].transform.translation.x = odom_msg.pose.pose.position.x;
-        tf_msg.transforms.data[0].transform.translation.y = odom_msg.pose.pose.position.y;
-        tf_msg.transforms.data[0].transform.translation.z = odom_msg.pose.pose.position.z;
-        tf_msg.transforms.data[0].transform.rotation      = odom_msg.pose.pose.orientation;
+        tf_msg.transforms.data[0].header.stamp.sec     = gyrodom_msg.header.stamp.sec;
+        tf_msg.transforms.data[0].header.stamp.nanosec = gyrodom_msg.header.stamp.nanosec;
+        tf_msg.transforms.data[0].header.frame_id      = gyrodom_msg.header.frame_id;
+        tf_msg.transforms.data[0].child_frame_id       = gyrodom_msg.child_frame_id;
+        tf_msg.transforms.data[0].transform.translation.x = gyrodom_msg.pose.pose.position.x;
+        tf_msg.transforms.data[0].transform.translation.y = gyrodom_msg.pose.pose.position.y;
+        tf_msg.transforms.data[0].transform.translation.z = gyrodom_msg.pose.pose.position.z;
+        tf_msg.transforms.data[0].transform.rotation      = gyrodom_msg.pose.pose.orientation;
         tf_msg.transforms.size = 1;
 
         /* Local timestamp (for non-ROS diagnostics) */

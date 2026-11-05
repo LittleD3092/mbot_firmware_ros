@@ -94,7 +94,8 @@ void mbot_print_state(const mbot_state_t* state) {
     buf[0] = '\0';
 
     // Odometry
-    float odom_array[1][3] = {{state->odom_x, state->odom_y, state->odom_theta}};
+    // float odom_array[1][3] = {{state->odom_x, state->odom_y, state->odom_theta}};
+    float odom_array[1][3] = {{state->gyrodom_x, state->gyrodom_y, state->gyrodom_theta}};
     generateTableFloat(buf, 1, 3, "ODOMETRY", odom_headings, odom_array);
     printf("\r%s", buf);
     buf[0] = '\0';
